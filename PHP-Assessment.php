@@ -63,76 +63,70 @@ $requests2 = [
   "add : golden medal"
 ];
 
-// Create shoppingCart outside of function for global usage
-$shoppingCart = [];
-
-// Create addToCart Function for easier readablity
-function addToCart($item, $quantity = 1) {
-  // Get global shoppingCart
-  global $shoppingCart;
-  // Check to see if item already exists in shoppingCart
-  if(array_key_exists($item, $shoppingCart)) {
-    // If item exists in shopping cart, update quantity
-     $shoppingCart[$item] += $quantity;
-  } else {
-    // If item doesn't exists in shopping cart, add to shopping cart
-    $shoppingCart[$item] = $quantity;
-  }
-  return $shoppingCart;
-}
-
-// Create removeFromCart Function for easier readablity
-function removeFromCart($item) {
-  // Get global shoppingCart
-  global $shoppingCart;
-  // Unset/Remove item from shoppingCart
-  unset($shoppingCart[$item]);
-  return $shoppingCart;
-}
-
-// Create updateShoppingCart Function
 function updateShoppingCart($requests) {
-  // Get global shoppingCart
-  global $shoppingCart;
-  // Loop through all of my requests
-  for($i = 0; $i < count($requests); $i ++) {
-    // Get the currentRequest
-    $currentRequest = $requests[$i];
+  // Create a shoppingCart
+  $shoppingCart = [];
+  // Loop through each request in the requests array
+  foreach($requests as $request) {
     // Check to see what kind of request it is
-    if(substr($currentRequest, 0, 3 ) === 'add') {
-      // If request is to add, get the item name and run the addToCart function
-      $item = substr($currentRequest, strpos($currentRequest, ":") + 2); 
-      addToCart($item);
-    } elseif(substr($currentRequest, 0, 3 ) === 'rem') {
-      // If request is to remove, get the item name and run the removeFromCart function
-      $item = substr($currentRequest, strpos($currentRequest, ":") + 2); 
-      removeFromCart($item);
-    } elseif(substr($currentRequest, 0, 3 ) === 'qua') {
-      // If request is quantity_upd, get the item name
-      $positionOfColon = [];
-      // Loop through the request string
-      for($j = 0; $j < strlen($currentRequest); $j ++) {
-        // If the current position of the string is a colon, keep track of it by putting it in the positionOfColon array
-        if ($currentRequest[$j] === ':') {
-          array_push($positionOfColon, $j);
+    $request = explode(':', $request);
+    $whatToDo = trim($request[0]);
+    $itemToAdd = (count($request) != 1) ? trim($request[1]) : null;
+    $quantity = (count($request) == 3) ? (int)trim($request[2]) : 1;
+    switch($whatToDo) {
+      case 'quantity_upd':
+      // Jump to add case
+        $whatToDo = 'add';
+      case 'add':
+        // Add item to shoppingCart
+        if (count($shoppingCart) < 1) {
+          // If shoppingCart is empty, Add item
+          array_push($shoppingCart, "$itemToAdd : $quantity");
+        } else {
+          // Keep an iteration number
+          $i = 0;
+          foreach($shoppingCart as $key => $shoppingCartItem) {
+            // Get itemInCart and quantityInCart
+            $shoppingCartItem = explode(':', $shoppingCartItem);
+            $itemInCart = trim($shoppingCartItem[0]);
+            $quantityInCart = trim($shoppingCartItem[1]);
+            if ($itemToAdd == $itemInCart) {
+              // If item exists in shoppingCart, Update Quantity
+              $quantity = ($quantity) + $quantityInCart;
+              $shoppingCart[$key] = "$itemToAdd : $quantity";
+              break;
+            } elseif (count($shoppingCart) === ($i + 1)) {
+              // If item does not exist in shoppingCart, Add to shoppingCart
+              array_push($shoppingCart, "$itemToAdd : $quantity");
+              $i = 0;
+              break;
+            }
+            // Increase iteration number if we don't break out of loop
+            $i += 1;
+          }
         }
-      }
-      // Get the item name because we know the item name is in between 2 colons
-      $item = substr($currentRequest, $positionOfColon[0] + 2, $positionOfColon[1] - ($positionOfColon[0] + 3));
-      // Get quantity we want to update the item by
-      $quantity = substr($currentRequest, strrpos($currentRequest, ":") + 2);
-      // Run the addToCart function because it can update the quantity
-      addToCart($item, $quantity);
-    } elseif(substr($currentRequest, 0, 3 ) === 'che') {
-      // If the request is checkout, we clear the shoppingCart
-      $shoppingCart = [];
+        break;
+      case 'remove':
+      // Remove item from shoppingCart
+        foreach($shoppingCart as $shoppingCartItem) {
+          // If item is found in shoppingCart, remove it
+          if(strpos($shoppingCartItem, $itemToAdd) !== false) {
+            $shoppingCart = array_diff($shoppingCart, [$shoppingCartItem]);
+            break;
+          }
+        }
+        break;
+      case 'checkout':
+      // Clear the shoppingCart
+        $shoppingCart = [];
+        break;
     }
   }
-
-  print_r($shoppingCart);
+  return $shoppingCart;
 }
 
-updateShoppingCart($requests1);
-echo '<br>';
-updateShoppingCart($requests2);
+print_r(updateShoppingCart($requests1));
+echo "<br>";
+print_r(updateShoppingCart($requests2));
+echo "<br>";
 ?>
