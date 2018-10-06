@@ -83,7 +83,7 @@ function updateShoppingCart($requests) {
           // If shoppingCart is empty, Add item
           array_push($shoppingCart, "$itemToAdd : $quantity");
         } else {
-          // Keep an iteration number
+          // Keep an iteration number to know which item you're on
           $i = 0;
           foreach($shoppingCart as $key => $shoppingCartItem) {
             // Get itemInCart and quantityInCart
